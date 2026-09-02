@@ -386,6 +386,116 @@ video {
 
 </div>
 
+<!-- ==========================================
+     CONTEO FÍSICO
+=========================================== -->
+
+<div id="zonaConteo" class="card" style="display:none; margin-top:18px;">
+
+  <button
+    id="btnCoincide"
+    type="button"
+    onclick="confirmarStockERP()"
+    style="
+      width:100%;
+      padding:18px;
+      border:0;
+      border-radius:12px;
+      background:#78bd91;
+      color:white;
+      font-size:18px;
+      font-weight:bold;
+      margin-bottom:22px;
+    ">
+    ✓ STOCK FÍSICO COINCIDE CON ERP
+  </button>
+
+  <div style="
+    font-size:18px;
+    font-weight:bold;
+    margin-bottom:10px;
+  ">
+    CONTEO FÍSICO
+  </div>
+
+  <input
+    id="conteoFisico"
+    type="number"
+    min="0"
+    inputmode="numeric"
+    placeholder="Cantidad encontrada"
+    style="
+      width:100%;
+      padding:17px;
+      border:2px solid #d9dde3;
+      border-radius:12px;
+      font-size:22px;
+      margin-bottom:10px;
+    "
+  >
+
+  <div style="
+    color:#666;
+    font-size:14px;
+    margin-bottom:18px;
+  ">
+    Captura únicamente si la cantidad física es distinta al Stock ERP.
+  </div>
+
+  <button
+    id="btnGuardarConteo"
+    type="button"
+    onclick="guardarConteoFisico()"
+    style="
+      width:100%;
+      padding:18px;
+      border:0;
+      border-radius:12px;
+      background:#204c7d;
+      color:white;
+      font-size:18px;
+      font-weight:bold;
+    ">
+    GUARDAR CONTEO FÍSICO
+  </button>
+
+  <div
+    id="resultadoGuardado"
+    style="
+      display:none;
+      margin-top:18px;
+      padding:18px;
+      border-radius:12px;
+      background:#e6f6ea;
+      color:#126b35;
+      text-align:center;
+      font-size:18px;
+      font-weight:bold;
+    ">
+  </div>
+
+  <button
+    id="btnSiguiente"
+    type="button"
+    onclick="siguienteProducto()"
+    style="
+      display:none;
+      width:100%;
+      padding:18px;
+      border:0;
+      border-radius:12px;
+      background:#3474eb;
+      color:white;
+      font-size:18px;
+      font-weight:bold;
+      margin-top:14px;
+    ">
+    📷 ESCANEAR SIGUIENTE PRODUCTO
+  </button>
+
+</div>
+
+  
 <script>
 
 /* =====================================================
@@ -933,6 +1043,11 @@ function mostrarProducto(
   contenedor.style.display =
     "block";
 
+mostrarZonaConteo();
+
+setTimeout(
+  function() {
+  
 
   setTimeout(
     function() {
@@ -1365,6 +1480,263 @@ document.addEventListener(
   }
 );
 
+/* =========================================================
+   CONTEO FÍSICO V2
+   Un producto → una escritura → siguiente
+========================================================= */
+
+function mostrarZonaConteo() {
+  const zona = document.getElementById("zonaConteo");
+  const campo = document.getElementById("conteoFisico");
+  const resultado = document.getElementById("resultadoGuardado");
+  const siguiente = document.getElementById("btnSiguiente");
+
+  if (!zona) return;
+
+  zona.style.display = "block";
+
+  if (campo) campo.value = "";
+  if (resultado) resultado.style.display = "none";
+  if (siguiente) siguiente.style.display = "none";
+}
+
+
+async function confirmarStockERP() {
+
+  if (!productoActual || !codigoActual) {
+    alert("No hay un producto seleccionado.");
+    return;
+  }
+
+  const boton = document.getElementById("btnCoincide");
+
+  if (boton) {
+    boton.disabled = true;
+    boton.textContent = "GUARDANDO...";
+  }
+
+  const stock = Number(productoActual.stockERP) || 0;
+
+  try {
+
+    await enviarConteoV2(codigoActual, stock);
+
+    mostrarGuardadoV2(stock);
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "No fue posible guardar el conteo. Intenta nuevamente."
+    );
+
+    if (boton) {
+      boton.disabled = false;
+      boton.textContent =
+        "✓ STOCK FÍSICO COINCIDE CON ERP";
+    }
+  }
+}
+
+
+async function guardarConteoFisico() {
+
+  if (!productoActual || !codigoActual) {
+    alert("No hay un producto seleccionado.");
+    return;
+  }
+
+  const campo =
+    document.getElementById("conteoFisico");
+
+  const texto =
+    String(campo.value || "").trim();
+
+  if (texto === "") {
+    alert("Captura la cantidad física encontrada.");
+    campo.focus();
+    return;
+  }
+
+  const conteo = Number(texto);
+
+  if (
+    !Number.isFinite(conteo) ||
+    conteo < 0
+  ) {
+    alert("Captura una cantidad válida.");
+    campo.focus();
+    return;
+  }
+
+  const boton =
+    document.getElementById("btnGuardarConteo");
+
+  if (boton) {
+    boton.disabled = true;
+    boton.textContent = "GUARDANDO...";
+  }
+
+  try {
+
+    await enviarConteoV2(codigoActual, conteo);
+
+    mostrarGuardadoV2(conteo);
+
+  } catch (error) {
+
+    console.error(error);
+
+    alert(
+      "No fue posible guardar el conteo. Intenta nuevamente."
+    );
+
+    if (boton) {
+      boton.disabled = false;
+      boton.textContent =
+        "GUARDAR CONTEO FÍSICO";
+    }
+  }
+}
+
+
+async function enviarConteoV2(codigo, conteo) {
+
+  const datos = new URLSearchParams();
+
+  datos.append("accion", "guardarPorCodigo");
+  datos.append("codigo", codigo);
+  datos.append("conteo", String(conteo));
+
+  const respuesta = await fetch(
+    API_URL,
+    {
+      method: "POST",
+      body: datos
+    }
+  );
+
+  if (!respuesta.ok) {
+    throw new Error(
+      "Error HTTP " + respuesta.status
+    );
+  }
+
+  /*
+    No hacemos una segunda búsqueda.
+    No reverificamos el producto.
+    No esperamos otra consulta.
+  */
+
+  return true;
+}
+
+
+function mostrarGuardadoV2(conteo) {
+
+  const stock =
+    Number(productoActual.stockERP) || 0;
+
+  const diferencia =
+    Number(conteo) - stock;
+
+  const resultado =
+    document.getElementById("resultadoGuardado");
+
+  const siguiente =
+    document.getElementById("btnSiguiente");
+
+  const botonCoincide =
+    document.getElementById("btnCoincide");
+
+  const botonGuardar =
+    document.getElementById("btnGuardarConteo");
+
+  if (resultado) {
+
+    resultado.innerHTML =
+      "✅ CONTEO REGISTRADO" +
+      "<br><br>" +
+      "Stock ERP: " + stock +
+      "<br>" +
+      "Conteo físico: " + conteo +
+      "<br>" +
+      "Diferencia: " + diferencia;
+
+    resultado.style.display = "block";
+  }
+
+  if (botonCoincide) {
+    botonCoincide.disabled = true;
+    botonCoincide.textContent =
+      "✓ CONTEO REGISTRADO";
+  }
+
+  if (botonGuardar) {
+    botonGuardar.disabled = true;
+  }
+
+  if (siguiente) {
+    siguiente.style.display = "block";
+  }
+}
+
+
+function siguienteProducto() {
+
+  productoActual = null;
+  codigoActual = "";
+
+  const zona =
+    document.getElementById("zonaConteo");
+
+  const producto =
+    document.getElementById("producto");
+
+  const busqueda =
+    document.getElementById("busqueda");
+
+  const resultado =
+    document.getElementById("resultadoGuardado");
+
+  const campo =
+    document.getElementById("conteoFisico");
+
+  const botonCoincide =
+    document.getElementById("btnCoincide");
+
+  const botonGuardar =
+    document.getElementById("btnGuardarConteo");
+
+  const siguiente =
+    document.getElementById("btnSiguiente");
+
+  if (zona) zona.style.display = "none";
+  if (producto) producto.style.display = "none";
+  if (resultado) resultado.style.display = "none";
+  if (campo) campo.value = "";
+  if (busqueda) busqueda.value = "";
+
+  if (botonCoincide) {
+    botonCoincide.disabled = false;
+    botonCoincide.textContent =
+      "✓ STOCK FÍSICO COINCIDE CON ERP";
+  }
+
+  if (botonGuardar) {
+    botonGuardar.disabled = false;
+    botonGuardar.textContent =
+      "GUARDAR CONTEO FÍSICO";
+  }
+
+  if (siguiente) {
+    siguiente.style.display = "none";
+  }
+
+  iniciarScanner();
+}
+  
 </script>
 
 </body>
