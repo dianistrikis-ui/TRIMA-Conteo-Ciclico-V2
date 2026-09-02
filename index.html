@@ -2,55 +2,337 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>TRIMA - Conteo Cíclico V2</title>
+
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"
+>
+
+<title>TRIMA - Conteo Cíclico</title>
 
 <script src="https://unpkg.com/@zxing/browser@latest"></script>
 
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f4f6f8;color:#1f2937}
-.app{max-width:520px;margin:auto;padding:18px}
-.header{background:#173f6d;color:#fff;border-radius:16px;padding:22px 18px;text-align:center;margin-bottom:16px}
-.header h1{margin:0;font-size:30px}
-.header p{margin:5px 0 0;font-size:15px}
-.card{background:#fff;border-radius:16px;padding:18px;margin-bottom:16px;box-shadow:0 3px 12px rgba(0,0,0,.08)}
-#estadoSistema{text-align:center;font-size:16px;line-height:1.45}
-.cargando{color:#8a5b00;background:#fff6dd}
-.listo{color:#146c35;background:#e7f6eb}
-.error{color:#a61b1b;background:#fdeaea}
-.titulo{font-size:18px;font-weight:bold;margin-bottom:12px}
-input{width:100%;padding:16px;border:2px solid #d5dae1;border-radius:12px;font-size:18px;margin-bottom:10px}
-button{width:100%;padding:17px;border:0;border-radius:12px;font-size:18px;font-weight:bold;cursor:pointer}
-button:disabled{opacity:.45;cursor:not-allowed}
-.btnBuscar{background:#173f6d;color:#fff;margin-bottom:10px}
-.btnScanner{background:#2f6fec;color:#fff}
-#visor{display:none;position:relative;overflow:hidden;border-radius:16px;background:#000;margin-top:15px}
-video{width:100%;display:block;min-height:360px;object-fit:cover}
-.marco{position:absolute;left:6%;right:6%;top:38%;height:24%;border:4px solid #fff;border-left-width:7px;border-right-width:7px;pointer-events:none}
-.linea{position:absolute;left:9%;right:9%;top:50%;height:3px;background:red;pointer-events:none}
-#estadoScanner{display:none;margin-top:12px;padding:13px;border-radius:10px;text-align:center;background:#eef4ff;color:#173f6d}
-#producto{display:none}
-.estadoProducto{padding:14px;border-radius:12px;text-align:center;font-size:20px;font-weight:bold;margin-bottom:18px}
-.productoActivo{background:#e6f5e9;color:#137333}
-.productoDesactivado{background:#fde7e7;color:#b3261e}
-.descripcion{font-size:25px;font-weight:bold;line-height:1.25;margin-bottom:20px}
-.dato{padding:13px 0;border-top:1px solid #ddd;font-size:17px}
-.dato strong{color:#173f6d}
-.stock{margin-top:18px;padding:22px;border-radius:14px;background:#eef3fb;text-align:center}
-.stockTitulo{font-size:17px}
-.stockNumero{font-size:46px;font-weight:bold;color:#173f6d;margin-top:6px}
-.tiempo{margin-top:15px;text-align:center;color:#667085;font-size:13px}
-#zonaConteo{display:none}
-.btnCoincide{background:#78bd91;color:#fff;margin-bottom:22px}
-.btnGuardar{background:#204c7d;color:#fff}
-.btnSiguiente{display:none;background:#3474eb;color:#fff;margin-top:14px}
-.ayuda{color:#666;font-size:14px;margin-bottom:18px}
-.resultado{display:none;margin-top:18px;padding:18px;border-radius:12px;background:#e6f6ea;color:#126b35;text-align:center;font-size:18px;font-weight:bold}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f4f6f8;
+  color: #202936;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.app {
+  max-width: 520px;
+  margin: auto;
+  padding: 16px;
+}
+
+/* =========================
+   ENCABEZADO
+========================= */
+
+.header {
+  background: #1e4b7a;
+  color: white;
+  border-radius: 16px;
+  padding: 22px 16px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.header p {
+  margin: 6px 0 0;
+  font-size: 15px;
+}
+
+/* =========================
+   TARJETAS
+========================= */
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.08);
+}
+
+.titulo {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+/* =========================
+   ESTADO DEL SISTEMA
+========================= */
+
+#estadoSistema {
+  text-align: center;
+  line-height: 1.5;
+}
+
+.sistemaCargando {
+  background: #fff5d9;
+  color: #795500;
+}
+
+.sistemaListo {
+  background: #e4f5e8;
+  color: #08752e;
+}
+
+.sistemaError {
+  background: #fde8e8;
+  color: #a61b1b;
+}
+
+/* =========================
+   INPUTS
+========================= */
+
+input {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid #ccd3dc;
+  border-radius: 12px;
+  font-size: 18px;
+  background: white;
+}
+
+input:focus {
+  outline: none;
+  border-color: #1e4b7a;
+}
+
+/* =========================
+   BOTONES
+========================= */
+
+button {
+  width: 100%;
+  padding: 17px;
+  border: 0;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .5;
+}
+
+.btnBuscar {
+  margin-top: 10px;
+  background: #1e4b7a;
+  color: white;
+}
+
+.btnEscanear {
+  margin-top: 10px;
+  background: #3474eb;
+  color: white;
+}
+
+.btnCoincide {
+  background: #68b886;
+  color: white;
+  margin-bottom: 24px;
+}
+
+.btnGuardar {
+  background: #1e4b7a;
+  color: white;
+  margin-top: 10px;
+}
+
+.btnSiguiente {
+  background: #3474eb;
+  color: white;
+  margin-top: 18px;
+}
+
+/* =========================
+   CÁMARA
+========================= */
+
+#visor {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  margin-top: 15px;
+  border-radius: 16px;
+  background: black;
+}
+
+#video {
+  width: 100%;
+  display: block;
+  min-height: 360px;
+  object-fit: cover;
+}
+
+.marco {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 38%;
+  height: 24%;
+
+  border: 4px solid white;
+  border-left-width: 7px;
+  border-right-width: 7px;
+
+  pointer-events: none;
+}
+
+.linea {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  top: 50%;
+
+  height: 3px;
+  background: red;
+
+  pointer-events: none;
+}
+
+#estadoScanner {
+  display: none;
+  margin-top: 12px;
+  padding: 13px;
+  border-radius: 10px;
+  background: #edf3ff;
+  color: #1e4b7a;
+  text-align: center;
+}
+
+/* =========================
+   PRODUCTO
+========================= */
+
+#producto {
+  display: none;
+}
+
+.estadoProducto {
+  padding: 14px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 18px;
+}
+
+.activo {
+  background: #e4f5e8;
+  color: #08752e;
+}
+
+.desactivado {
+  background: #fde8e8;
+  color: #b42318;
+}
+
+.descripcion {
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1.25;
+  margin-bottom: 18px;
+}
+
+.dato {
+  padding: 12px 0;
+  border-top: 1px solid #ddd;
+  font-size: 16px;
+}
+
+.dato strong {
+  color: #1e4b7a;
+}
+
+/* =========================
+   STOCK
+========================= */
+
+.stock {
+  background: #edf2fa;
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: 14px;
+  text-align: center;
+}
+
+.stockTitulo {
+  font-size: 16px;
+}
+
+.stockNumero {
+  margin-top: 5px;
+  color: #1e4b7a;
+  font-size: 46px;
+  font-weight: bold;
+}
+
+.tiempo {
+  margin-top: 12px;
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* =========================
+   CONTEO
+========================= */
+
+#conteo {
+  display: none;
+}
+
+.separador {
+  height: 1px;
+  background: #ddd;
+  margin: 20px 0;
+}
+
+.ayuda {
+  margin: 8px 0 12px;
+  font-size: 14px;
+  color: #666;
+}
+
+/* =========================
+   RESULTADO
+========================= */
+
+#resultado {
+  display: none;
+  padding: 18px;
+  border-radius: 12px;
+  background: #e4f5e8;
+  color: #08752e;
+  text-align: center;
+  line-height: 1.55;
+  font-size: 18px;
+  font-weight: bold;
+}
+
 </style>
 </head>
 
 <body>
+
 <div class="app">
 
   <div class="header">
@@ -58,536 +340,1489 @@ video{width:100%;display:block;min-height:360px;object-fit:cover}
     <p>CONTEO CÍCLICO DE INVENTARIO · V2</p>
   </div>
 
-  <div id="estadoSistema" class="card cargando">
-    ⏳ <strong>Preparando catálogo TRIMA...</strong><br>
-    Espera un momento antes de comenzar.
+
+  <!-- ESTADO SISTEMA -->
+
+  <div
+    id="estadoSistema"
+    class="card sistemaCargando"
+  >
+    ⏳ <strong>CARGANDO CATÁLOGO...</strong>
   </div>
 
+
+  <!-- BÚSQUEDA -->
+
   <div class="card">
-    <div class="titulo">BUSCAR PRODUCTO</div>
 
-    <input id="busqueda" type="text" inputmode="text" autocomplete="off"
-           placeholder="Código de barras / código proveedor" disabled>
+    <div class="titulo">
+      BUSCAR PRODUCTO
+    </div>
 
-    <button id="btnBuscar" class="btnBuscar" type="button" disabled>
+    <input
+      id="busqueda"
+      type="text"
+      autocomplete="off"
+      placeholder="Código de barras / código proveedor"
+      disabled
+    >
+
+    <button
+      id="btnBuscar"
+      class="btnBuscar"
+      type="button"
+      disabled
+    >
       🔎 BUSCAR
     </button>
 
-    <button id="btnScanner" class="btnScanner" type="button" disabled>
+    <button
+      id="btnEscanear"
+      class="btnEscanear"
+      type="button"
+      disabled
+    >
       📷 ESCANEAR CÓDIGO DE BARRAS
     </button>
 
+
+    <!-- CÁMARA -->
+
     <div id="visor">
-      <video id="video" autoplay muted playsinline></video>
+
+      <video
+        id="video"
+        autoplay
+        muted
+        playsinline
+      ></video>
+
       <div class="marco"></div>
       <div class="linea"></div>
+
     </div>
 
     <div id="estadoScanner"></div>
+
   </div>
 
-  <div id="producto" class="card">
-    <div id="estadoProducto" class="estadoProducto"></div>
-    <div id="descripcion" class="descripcion"></div>
 
-    <div class="dato"><strong>Código proveedor:</strong> <span id="codigoProveedor"></span></div>
-    <div class="dato"><strong>Código de barras:</strong> <span id="codigoBarras"></span></div>
-    <div class="dato"><strong>ID ERP:</strong> <span id="idERP"></span></div>
+  <!-- PRODUCTO -->
 
-    <div class="stock">
-      <div class="stockTitulo">STOCK ERP</div>
-      <div id="stockERP" class="stockNumero"></div>
+  <div
+    id="producto"
+    class="card"
+  >
+
+    <div
+      id="estadoProducto"
+      class="estadoProducto"
+    ></div>
+
+    <div
+      id="descripcion"
+      class="descripcion"
+    ></div>
+
+    <div class="dato">
+      <strong>Código proveedor:</strong>
+      <span id="codigoProveedor"></span>
     </div>
 
-    <div id="tiempoBusqueda" class="tiempo"></div>
+    <div class="dato">
+      <strong>Código de barras:</strong>
+      <span id="codigoBarras"></span>
+    </div>
+
+    <div class="dato">
+      <strong>ID ERP:</strong>
+      <span id="idERP"></span>
+    </div>
+
+    <div class="stock">
+
+      <div class="stockTitulo">
+        STOCK ERP
+      </div>
+
+      <div
+        id="stockERP"
+        class="stockNumero"
+      ></div>
+
+    </div>
+
+    <div
+      id="tiempoBusqueda"
+      class="tiempo"
+    ></div>
+
   </div>
 
-  <div id="zonaConteo" class="card">
-    <button id="btnCoincide" class="btnCoincide" type="button">
+
+  <!-- CONTEO -->
+
+  <div
+    id="conteo"
+    class="card"
+  >
+
+    <button
+      id="btnCoincide"
+      class="btnCoincide"
+      type="button"
+    >
       ✓ STOCK FÍSICO COINCIDE CON ERP
     </button>
 
-    <div class="titulo">CONTEO FÍSICO</div>
+    <div class="separador"></div>
 
-    <input id="conteoFisico" type="number" min="0" step="1" inputmode="numeric"
-           placeholder="Cantidad encontrada">
-
-    <div class="ayuda">
-      Captura únicamente si la cantidad física es distinta al Stock ERP.
+    <div class="titulo">
+      CONTEO FÍSICO
     </div>
 
-    <button id="btnGuardarConteo" class="btnGuardar" type="button">
+    <input
+      id="cantidadFisica"
+      type="number"
+      min="0"
+      step="1"
+      inputmode="numeric"
+      placeholder="Cantidad encontrada"
+    >
+
+    <div class="ayuda">
+      Captura únicamente cuando la existencia física
+      sea diferente al Stock ERP.
+    </div>
+
+    <button
+      id="btnGuardar"
+      class="btnGuardar"
+      type="button"
+    >
       GUARDAR CONTEO FÍSICO
     </button>
 
-    <div id="resultadoGuardado" class="resultado"></div>
-
-    <button id="btnSiguiente" class="btnSiguiente" type="button">
-      📷 ESCANEAR SIGUIENTE PRODUCTO
-    </button>
   </div>
+
+
+  <!-- RESULTADO -->
+
+  <div
+    id="resultado"
+    class="card"
+  ></div>
+
+
+  <button
+    id="btnSiguiente"
+    class="btnSiguiente"
+    type="button"
+    style="display:none"
+  >
+    📷 ESCANEAR SIGUIENTE PRODUCTO
+  </button>
 
 </div>
 
+
 <script>
+
+/* =====================================================
+   CONFIGURACIÓN
+===================================================== */
+
 const API_URL =
-  "https://script.google.com/macros/s/AKfycbxLuRTDM0DHJ6mHinM0yyylBgSk7a8fCszae4Ryc4KlWhZ7hRr9zwp1IRmr-BeGn1468A/exec";
+"https://script.google.com/macros/s/AKfycbxLuRTDM0DHJ6mHinM0yyylBgSk7a8fCszae4Ryc4KlWhZ7hRr9zwp1IRmr-BeGn1468A/exec";
+
+
+/* =====================================================
+   ESTADO
+===================================================== */
 
 let catalogo = [];
-let indiceCatalogo = new Map();
+
+let indice = new Map();
+
 let catalogoListo = false;
 
 let productoActual = null;
+
 let codigoActual = "";
 
 let stream = null;
+
 let controles = null;
-let detectado = false;
+
+let lecturaTerminada = false;
+
 let guardando = false;
 
-const $ = id => document.getElementById(id);
-
-function normalizarCodigo(valor) {
-  return String(valor ?? "").trim().toUpperCase();
-}
-
-function escaparHTML(texto) {
-  return String(texto ?? "")
-    .replace(/&/g,"&amp;")
-    .replace(/</g,"&lt;")
-    .replace(/>/g,"&gt;")
-    .replace(/"/g,"&quot;")
-    .replace(/'/g,"&#039;");
-}
 
 /* =====================================================
-   1. CARGA ÚNICA DEL CATÁLOGO
+   UTILIDADES
 ===================================================== */
+
+function elemento(id) {
+
+  return document.getElementById(id);
+
+}
+
+
+function normalizar(valor) {
+
+  return String(
+    valor === undefined ||
+    valor === null
+      ? ""
+      : valor
+  )
+  .trim()
+  .toUpperCase();
+
+}
+
+
+/* =====================================================
+   CATÁLOGO
+   SE CARGA UNA SOLA VEZ
+===================================================== */
+
 function cargarCatalogo() {
-  const estado = $("estadoSistema");
-  const callback = "catalogoTRIMA_" + Date.now();
-  const script = document.createElement("script");
-  let terminado = false;
 
-  estado.className = "card cargando";
-  estado.innerHTML = "⏳ <strong>Cargando catálogo TRIMA...</strong>";
+  const estado =
+    elemento("estadoSistema");
 
-  window[callback] = function(respuesta) {
-    terminado = true;
+  const callback =
+    "catalogoTRIMA_" + Date.now();
 
-    try {
-      if (!respuesta || respuesta.ok !== true || !Array.isArray(respuesta.catalogo)) {
-        throw new Error("No se recibió un catálogo válido.");
+  const script =
+    document.createElement("script");
+
+
+  window[callback] =
+    function(respuesta) {
+
+      try {
+
+        if (
+          !respuesta ||
+          respuesta.ok !== true ||
+          !Array.isArray(
+            respuesta.catalogo
+          )
+        ) {
+
+          throw new Error(
+            "Catálogo inválido"
+          );
+
+        }
+
+
+        catalogo =
+          respuesta.catalogo;
+
+
+        construirIndice();
+
+
+        catalogoListo = true;
+
+
+        elemento("busqueda")
+          .disabled = false;
+
+        elemento("btnBuscar")
+          .disabled = false;
+
+        elemento("btnEscanear")
+          .disabled = false;
+
+
+        estado.className =
+          "card sistemaListo";
+
+
+        estado.innerHTML =
+          "✅ <strong>SISTEMA LISTO</strong><br>" +
+          catalogo.length +
+          " artículos cargados.";
+
+
+      } catch(error) {
+
+        estado.className =
+          "card sistemaError";
+
+        estado.innerHTML =
+          "❌ ERROR AL CARGAR CATÁLOGO";
+
       }
 
-      catalogo = respuesta.catalogo;
-      construirIndice();
-      catalogoListo = true;
 
-      $("busqueda").disabled = false;
-      $("btnBuscar").disabled = false;
-      $("btnScanner").disabled = false;
+      try {
 
-      estado.className = "card listo";
-      estado.innerHTML =
-        "✅ <strong>SISTEMA LISTO</strong><br>" +
-        catalogo.length + " artículos cargados.";
-    } catch (error) {
-      mostrarErrorCatalogo(error.message);
-    } finally {
-      try { delete window[callback]; } catch(e) {}
+        delete window[callback];
+
+      } catch(e) {}
+
+
       script.remove();
-    }
-  };
 
-  script.onerror = function() {
-    if (terminado) return;
-    terminado = true;
-    try { delete window[callback]; } catch(e) {}
-    script.remove();
-    mostrarErrorCatalogo("No fue posible conectar con TRIMA.");
-  };
+    };
+
+
+  script.onerror =
+    function() {
+
+      estado.className =
+        "card sistemaError";
+
+      estado.innerHTML =
+        "❌ NO SE PUDO CONECTAR CON TRIMA";
+
+    };
+
 
   script.src =
     API_URL +
     "?accion=catalogo" +
-    "&callback=" + encodeURIComponent(callback) +
-    "&_=" + Date.now();
+    "&callback=" +
+    encodeURIComponent(callback) +
+    "&_=" +
+    Date.now();
 
-  document.body.appendChild(script);
 
-  setTimeout(function() {
-    if (!terminado && !catalogoListo) {
-      mostrarErrorCatalogo("La carga del catálogo tardó demasiado. Recarga la página.");
-    }
-  }, 45000);
+  document.body.appendChild(
+    script
+  );
+
 }
 
-function mostrarErrorCatalogo(mensaje) {
-  const estado = $("estadoSistema");
-  estado.className = "card error";
-  estado.innerHTML =
-    "❌ <strong>NO SE PUDO CARGAR EL CATÁLOGO</strong><br>" +
-    escaparHTML(mensaje);
-}
+
+/* =====================================================
+   ÍNDICE LOCAL
+===================================================== */
 
 function construirIndice() {
-  indiceCatalogo.clear();
 
-  for (const producto of catalogo) {
-    const proveedor = normalizarCodigo(producto.codigoProveedor);
-    const barras = normalizarCodigo(producto.codigoBarras);
+  indice.clear();
 
-    if (proveedor && !indiceCatalogo.has(proveedor)) {
-      indiceCatalogo.set(proveedor, producto);
+
+  for (
+    let i = 0;
+    i < catalogo.length;
+    i++
+  ) {
+
+    const producto =
+      catalogo[i];
+
+
+    const proveedor =
+      normalizar(
+        producto.codigoProveedor
+      );
+
+
+    const barras =
+      normalizar(
+        producto.codigoBarras
+      );
+
+
+    if (
+      proveedor &&
+      !indice.has(proveedor)
+    ) {
+
+      indice.set(
+        proveedor,
+        producto
+      );
+
     }
 
-    if (barras && !indiceCatalogo.has(barras)) {
-      indiceCatalogo.set(barras, producto);
+
+    if (
+      barras &&
+      !indice.has(barras)
+    ) {
+
+      indice.set(
+        barras,
+        producto
+      );
+
     }
+
   }
+
 }
 
+
 /* =====================================================
-   2. BÚSQUEDA LOCAL INMEDIATA
+   BÚSQUEDA LOCAL
+   NO LLAMA A GOOGLE
 ===================================================== */
-function procesarCodigo(codigo) {
-  const inicio = performance.now();
-  const clave = normalizarCodigo(codigo);
 
-  if (!clave || !catalogoListo) return;
+function buscarCodigo(codigo) {
 
-  $("busqueda").value = clave;
+  if (!catalogoListo) {
 
-  const producto = indiceCatalogo.get(clave);
+    return;
+
+  }
+
+
+  const inicio =
+    performance.now();
+
+
+  const clave =
+    normalizar(codigo);
+
+
+  if (!clave) {
+
+    return;
+
+  }
+
+
+  const producto =
+    indice.get(clave);
+
 
   if (!producto) {
+
     limpiarProducto();
-    alert("Producto no encontrado en el catálogo TRIMA.\n\nCódigo: " + clave);
+
+    alert(
+      "Producto no encontrado.\n\n" +
+      "Código: " +
+      clave
+    );
+
     return;
+
   }
 
-  productoActual = producto;
-  codigoActual = clave;
 
-  mostrarProducto(producto);
+  codigoActual =
+    clave;
 
-  $("tiempoBusqueda").textContent =
-    "Búsqueda local: " + Math.round(performance.now() - inicio) + " ms";
+
+  productoActual =
+    producto;
+
+
+  elemento("busqueda")
+    .value = clave;
+
+
+  mostrarProducto(
+    producto
+  );
+
+
+  const tiempo =
+    Math.round(
+      performance.now() -
+      inicio
+    );
+
+
+  elemento("tiempoBusqueda")
+    .textContent =
+      "Búsqueda local: " +
+      tiempo +
+      " ms";
+
 }
 
-function buscarManual() {
-  procesarCodigo($("busqueda").value);
-}
-
-function mostrarProducto(producto) {
-  const desactivado =
-    producto.desactivado === true ||
-    ["DESACTIVADO","NO"].includes(normalizarCodigo(producto.estadoArticulo));
-
-  const estado = $("estadoProducto");
-  estado.className =
-    "estadoProducto " + (desactivado ? "productoDesactivado" : "productoActivo");
-  estado.textContent =
-    desactivado ? "🔴 ARTÍCULO DESACTIVADO" : "🟢 ARTÍCULO ACTIVO";
-
-  $("descripcion").textContent = producto.descripcion || "";
-  $("codigoProveedor").textContent = producto.codigoProveedor || "";
-  $("codigoBarras").textContent = producto.codigoBarras || "";
-  $("idERP").textContent = producto.id || "";
-  $("stockERP").textContent = producto.stockERP ?? "";
-
-  $("producto").style.display = "block";
-  prepararConteo();
-
-  setTimeout(function() {
-    $("producto").scrollIntoView({behavior:"smooth", block:"start"});
-  }, 50);
-}
-
-function prepararConteo() {
-  $("zonaConteo").style.display = "block";
-  $("conteoFisico").value = "";
-  $("resultadoGuardado").style.display = "none";
-  $("btnSiguiente").style.display = "none";
-
-  $("btnCoincide").disabled = false;
-  $("btnCoincide").textContent = "✓ STOCK FÍSICO COINCIDE CON ERP";
-
-  $("btnGuardarConteo").disabled = false;
-  $("btnGuardarConteo").textContent = "GUARDAR CONTEO FÍSICO";
-}
-
-function limpiarProducto() {
-  productoActual = null;
-  codigoActual = "";
-  $("producto").style.display = "none";
-  $("zonaConteo").style.display = "none";
-}
 
 /* =====================================================
-   3. ESCÁNER
-   Se conserva la configuración de cámara que funcionó
-   correctamente en iPhone.
+   MOSTRAR PRODUCTO
 ===================================================== */
-function detenerScanner() {
-  try {
-    if (controles) {
-      controles.stop();
-      controles = null;
-    }
-  } catch(e) {}
 
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-    stream = null;
+function mostrarProducto(producto) {
+
+  const estadoArticulo =
+    normalizar(
+      producto.estadoArticulo
+    );
+
+
+  const desactivado =
+
+    producto.desactivado === true ||
+
+    estadoArticulo ===
+      "DESACTIVADO" ||
+
+    estadoArticulo ===
+      "NO";
+
+
+  const estado =
+    elemento(
+      "estadoProducto"
+    );
+
+
+  if (desactivado) {
+
+    estado.className =
+      "estadoProducto desactivado";
+
+    estado.textContent =
+      "🔴 ARTÍCULO DESACTIVADO";
+
+  } else {
+
+    estado.className =
+      "estadoProducto activo";
+
+    estado.textContent =
+      "🟢 ARTÍCULO ACTIVO";
+
   }
-}
 
-async function iniciarScanner() {
-  if (!catalogoListo) {
-    alert("Espera a que aparezca SISTEMA LISTO.");
-    return;
-  }
 
-  detenerScanner();
-  detectado = false;
-  limpiarProducto();
+  elemento("descripcion")
+    .textContent =
+      producto.descripcion || "";
 
-  const video = $("video");
-  const visor = $("visor");
-  const estado = $("estadoScanner");
 
-  visor.style.display = "block";
-  estado.style.display = "block";
-  estado.innerHTML = "📷 Abriendo cámara trasera...";
+  elemento("codigoProveedor")
+    .textContent =
+      producto.codigoProveedor || "";
 
-  try {
-    stream = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: {
-        facingMode: { ideal: "environment" },
-        width: { ideal: 1920 },
-        height: { ideal: 1080 },
-        frameRate: { ideal: 30 }
-      }
+
+  elemento("codigoBarras")
+    .textContent =
+      producto.codigoBarras || "";
+
+
+  elemento("idERP")
+    .textContent =
+      producto.id || "";
+
+
+  elemento("stockERP")
+    .textContent =
+      producto.stockERP === undefined
+        ? ""
+        : producto.stockERP;
+
+
+  elemento("producto")
+    .style.display =
+      "block";
+
+
+  prepararConteo();
+
+
+  elemento("producto")
+    .scrollIntoView({
+      behavior: "smooth",
+      block: "start"
     });
 
-    video.srcObject = stream;
-    await video.play();
+}
 
-    const track = stream.getVideoTracks()[0];
-    let capabilities = {};
 
-    if (typeof track.getCapabilities === "function") {
-      capabilities = track.getCapabilities();
+/* =====================================================
+   PREPARAR CONTEO
+===================================================== */
+
+function prepararConteo() {
+
+  elemento("cantidadFisica")
+    .value = "";
+
+
+  elemento("conteo")
+    .style.display =
+      "block";
+
+
+  elemento("resultado")
+    .style.display =
+      "none";
+
+
+  elemento("btnSiguiente")
+    .style.display =
+      "none";
+
+
+  elemento("btnCoincide")
+    .disabled = false;
+
+
+  elemento("btnGuardar")
+    .disabled = false;
+
+}
+
+
+/* =====================================================
+   LIMPIAR PRODUCTO
+===================================================== */
+
+function limpiarProducto() {
+
+  productoActual = null;
+
+  codigoActual = "";
+
+
+  elemento("producto")
+    .style.display =
+      "none";
+
+
+  elemento("conteo")
+    .style.display =
+      "none";
+
+
+  elemento("resultado")
+    .style.display =
+      "none";
+
+
+  elemento("btnSiguiente")
+    .style.display =
+      "none";
+
+}
+
+
+/* =====================================================
+   CÁMARA
+===================================================== */
+
+function detenerScanner() {
+
+  try {
+
+    if (controles) {
+
+      controles.stop();
+
+      controles = null;
+
     }
 
-    const advanced = [];
+  } catch(e) {}
+
+
+  if (stream) {
+
+    stream
+      .getTracks()
+      .forEach(
+        function(track) {
+
+          track.stop();
+
+        }
+      );
+
+
+    stream = null;
+
+  }
+
+}
+
+
+/* =====================================================
+   INICIAR ESCÁNER
+===================================================== */
+
+async function iniciarScanner() {
+
+  if (!catalogoListo) {
+
+    return;
+
+  }
+
+
+  detenerScanner();
+
+
+  limpiarProducto();
+
+
+  lecturaTerminada =
+    false;
+
+
+  const video =
+    elemento("video");
+
+
+  const visor =
+    elemento("visor");
+
+
+  const estado =
+    elemento(
+      "estadoScanner"
+    );
+
+
+  visor.style.display =
+    "block";
+
+
+  estado.style.display =
+    "block";
+
+
+  estado.innerHTML =
+    "📷 Abriendo cámara...";
+
+
+  try {
+
+
+    /* -----------------------------------------
+       ESTA ES LA CONFIGURACIÓN QUE YA FUNCIONÓ
+       EN EL IPHONE
+    ----------------------------------------- */
+
+    stream =
+      await navigator.mediaDevices
+        .getUserMedia({
+
+          audio: false,
+
+          video: {
+
+            facingMode: {
+              ideal:
+                "environment"
+            },
+
+            width: {
+              ideal: 1920
+            },
+
+            height: {
+              ideal: 1080
+            },
+
+            frameRate: {
+              ideal: 30
+            }
+
+          }
+
+        });
+
+
+    video.srcObject =
+      stream;
+
+
+    await video.play();
+
+
+    const track =
+      stream
+        .getVideoTracks()[0];
+
+
+    let capabilities =
+      {};
+
+
+    if (
+      typeof track
+        .getCapabilities ===
+      "function"
+    ) {
+
+      capabilities =
+        track.getCapabilities();
+
+    }
+
+
+    const advanced =
+      [];
+
+
+    /* ENFOQUE CONTINUO */
 
     if (
       capabilities.focusMode &&
-      Array.isArray(capabilities.focusMode) &&
-      capabilities.focusMode.includes("continuous")
+      Array.isArray(
+        capabilities.focusMode
+      ) &&
+      capabilities
+        .focusMode
+        .includes(
+          "continuous"
+        )
     ) {
-      advanced.push({ focusMode: "continuous" });
+
+      advanced.push({
+
+        focusMode:
+          "continuous"
+
+      });
+
     }
+
+
+    /* ZOOM LIGERO */
 
     if (
       capabilities.zoom &&
-      typeof capabilities.zoom.min === "number" &&
-      typeof capabilities.zoom.max === "number"
+      typeof
+        capabilities.zoom.min ===
+        "number" &&
+      typeof
+        capabilities.zoom.max ===
+        "number"
     ) {
-      let zoomDeseado = Math.max(capabilities.zoom.min, 1.2);
-      zoomDeseado = Math.min(zoomDeseado, capabilities.zoom.max);
-      advanced.push({ zoom: zoomDeseado });
+
+      let zoom =
+        Math.max(
+          capabilities.zoom.min,
+          1.2
+        );
+
+
+      zoom =
+        Math.min(
+          zoom,
+          capabilities.zoom.max
+        );
+
+
+      advanced.push({
+
+        zoom: zoom
+
+      });
+
     }
 
-    if (advanced.length > 0) {
+
+    if (
+      advanced.length > 0
+    ) {
+
       try {
-        await track.applyConstraints({ advanced: advanced });
-      } catch(e) {
-        console.log("Constraints avanzados:", e);
-      }
+
+        await track
+          .applyConstraints({
+
+            advanced:
+              advanced
+
+          });
+
+      } catch(e) {}
+
     }
+
 
     estado.innerHTML =
       "🔎 <strong>LECTOR ACTIVO</strong><br>" +
-      "Mantén el código dentro del marco.";
+      "Coloca el código dentro del marco.";
 
-    const lector = new ZXingBrowser.BrowserMultiFormatReader();
 
-    controles = await lector.decodeFromStream(
-      stream,
-      video,
-      function(resultadoZXing, error, controlActual) {
-        if (!resultadoZXing || detectado) return;
+    /* -----------------------------------------
+       ZXING
+       DECODIFICA DIRECTAMENTE EL STREAM
+    ----------------------------------------- */
 
-        const texto = resultadoZXing.getText();
-        if (!texto) return;
+    const lector =
+      new ZXingBrowser
+        .BrowserMultiFormatReader();
 
-        detectado = true;
 
-        try { controlActual.stop(); } catch(e) {}
+    controles =
+      await lector
+        .decodeFromStream(
 
-        if (stream) {
-          stream.getTracks().forEach(t => t.stop());
-          stream = null;
-        }
+          stream,
 
-        visor.style.display = "none";
-        estado.innerHTML =
-          "🎯 Código leído: <strong>" + escaparHTML(texto) + "</strong>";
+          video,
 
-        procesarCodigo(texto);
-      }
+          function(
+            resultado,
+            error,
+            control
+          ) {
+
+
+            if (
+              !resultado ||
+              lecturaTerminada
+            ) {
+
+              return;
+
+            }
+
+
+            const codigo =
+              resultado.getText();
+
+
+            if (!codigo) {
+
+              return;
+
+            }
+
+
+            /* UNA SOLA LECTURA */
+
+            lecturaTerminada =
+              true;
+
+
+            try {
+
+              control.stop();
+
+            } catch(e) {}
+
+
+            /* CERRAR CÁMARA
+               INMEDIATAMENTE */
+
+            if (stream) {
+
+              stream
+                .getTracks()
+                .forEach(
+                  function(t) {
+
+                    t.stop();
+
+                  }
+                );
+
+
+              stream = null;
+
+            }
+
+
+            visor.style.display =
+              "none";
+
+
+            estado.style.display =
+              "none";
+
+
+            /* BÚSQUEDA LOCAL
+               INMEDIATA */
+
+            buscarCodigo(
+              codigo
+            );
+
+          }
+
+        );
+
+
+  } catch(error) {
+
+
+    console.error(
+      error
     );
 
-  } catch(error) {
-    console.error(error);
-    estado.style.display = "block";
+
+    estado.style.display =
+      "block";
+
+
     estado.innerHTML =
-      "❌ No fue posible iniciar la cámara.<br>" +
-      escaparHTML(error.message);
+      "❌ No fue posible abrir la cámara.<br>" +
+      error.message;
+
   }
+
 }
+
 
 /* =====================================================
-   4. CONTEO
-   Un producto -> una escritura -> siguiente.
-   No hay segunda búsqueda ni reverificación.
+   CONFIRMAR STOCK ERP
 ===================================================== */
-async function confirmarStockERP() {
-  if (!productoActual || !codigoActual || guardando) return;
 
-  const stock = Number(productoActual.stockERP) || 0;
-  await registrarConteo(stock);
+function confirmarStock() {
+
+  if (
+    !productoActual ||
+    guardando
+  ) {
+
+    return;
+
+  }
+
+
+  const stock =
+    Number(
+      productoActual.stockERP
+    ) || 0;
+
+
+  guardar(
+    stock
+  );
+
 }
 
-async function guardarConteoFisico() {
-  if (!productoActual || !codigoActual || guardando) return;
 
-  const campo = $("conteoFisico");
-  const texto = String(campo.value ?? "").trim();
+/* =====================================================
+   GUARDAR CONTEO MANUAL
+===================================================== */
+
+function guardarManual() {
+
+  if (
+    !productoActual ||
+    guardando
+  ) {
+
+    return;
+
+  }
+
+
+  const campo =
+    elemento(
+      "cantidadFisica"
+    );
+
+
+  const texto =
+    String(
+      campo.value
+    ).trim();
+
 
   if (texto === "") {
-    alert("Captura la cantidad física encontrada.");
+
+    alert(
+      "Captura la cantidad física encontrada."
+    );
+
     campo.focus();
+
     return;
+
   }
 
-  const conteo = Number(texto);
 
-  if (!Number.isFinite(conteo) || conteo < 0) {
-    alert("Captura una cantidad válida.");
+  const cantidad =
+    Number(texto);
+
+
+  if (
+    !Number.isFinite(
+      cantidad
+    ) ||
+    cantidad < 0
+  ) {
+
+    alert(
+      "Captura una cantidad válida."
+    );
+
     campo.focus();
+
     return;
+
   }
 
-  await registrarConteo(conteo);
+
+  guardar(
+    cantidad
+  );
+
 }
 
-async function registrarConteo(conteo) {
-  guardando = true;
-
-  $("btnCoincide").disabled = true;
-  $("btnGuardarConteo").disabled = true;
-
-  const textoCoincide = $("btnCoincide").textContent;
-  const textoGuardar = $("btnGuardarConteo").textContent;
-
-  $("btnCoincide").textContent = "GUARDANDO...";
-  $("btnGuardarConteo").textContent = "GUARDANDO...";
-
-  try {
-    await enviarConteo(codigoActual, conteo);
-    mostrarGuardado(conteo);
-  } catch(error) {
-    console.error(error);
-    alert("No fue posible guardar el conteo. No se registró como terminado.");
-
-    $("btnCoincide").disabled = false;
-    $("btnGuardarConteo").disabled = false;
-    $("btnCoincide").textContent = textoCoincide;
-    $("btnGuardarConteo").textContent = textoGuardar;
-  } finally {
-    guardando = false;
-  }
-}
-
-async function enviarConteo(codigo, conteo) {
-  const datos = new URLSearchParams();
-  datos.append("accion", "guardarPorCodigo");
-  datos.append("codigo", codigo);
-  datos.append("conteo", String(conteo));
-
-  const respuesta = await fetch(API_URL, {
-    method: "POST",
-    body: datos
-  });
-
-  if (!respuesta.ok) {
-    throw new Error("Error HTTP " + respuesta.status);
-  }
-
-  return true;
-}
-
-function mostrarGuardado(conteo) {
-  const stock = Number(productoActual.stockERP) || 0;
-  const diferencia = Number(conteo) - stock;
-
-  $("resultadoGuardado").innerHTML =
-    "✅ CONTEO REGISTRADO<br><br>" +
-    "Stock ERP: " + stock + "<br>" +
-    "Conteo físico: " + conteo + "<br>" +
-    "Diferencia: " + diferencia;
-
-  $("resultadoGuardado").style.display = "block";
-
-  $("btnCoincide").textContent = "✓ CONTEO REGISTRADO";
-  $("btnGuardarConteo").textContent = "CONTEO REGISTRADO";
-  $("btnSiguiente").style.display = "block";
-
-  $("btnSiguiente").scrollIntoView({behavior:"smooth", block:"center"});
-}
 
 /* =====================================================
-   5. SIGUIENTE PRODUCTO
+   GUARDAR
+   UNA SOLA ESCRITURA
 ===================================================== */
-function siguienteProducto() {
-  productoActual = null;
-  codigoActual = "";
 
-  $("producto").style.display = "none";
-  $("zonaConteo").style.display = "none";
-  $("resultadoGuardado").style.display = "none";
-  $("conteoFisico").value = "";
-  $("busqueda").value = "";
-  $("estadoScanner").style.display = "none";
+async function guardar(cantidad) {
+
+  if (guardando) {
+
+    return;
+
+  }
+
+
+  guardando =
+    true;
+
+
+  const btnCoincide =
+    elemento(
+      "btnCoincide"
+    );
+
+
+  const btnGuardar =
+    elemento(
+      "btnGuardar"
+    );
+
+
+  btnCoincide.disabled =
+    true;
+
+
+  btnGuardar.disabled =
+    true;
+
+
+  btnCoincide.textContent =
+    "GUARDANDO...";
+
+
+  btnGuardar.textContent =
+    "GUARDANDO...";
+
+
+  try {
+
+
+    const datos =
+      new URLSearchParams();
+
+
+    datos.append(
+      "accion",
+      "guardarPorCodigo"
+    );
+
+
+    datos.append(
+      "codigo",
+      codigoActual
+    );
+
+
+    datos.append(
+      "conteo",
+      String(cantidad)
+    );
+
+
+    /* UNA SOLA LLAMADA */
+
+    const respuesta =
+      await fetch(
+        API_URL,
+        {
+
+          method: "POST",
+
+          body: datos
+
+        }
+      );
+
+
+    if (!respuesta.ok) {
+
+      throw new Error(
+        "No se pudo guardar"
+      );
+
+    }
+
+
+    mostrarResultado(
+      cantidad
+    );
+
+
+  } catch(error) {
+
+
+    console.error(
+      error
+    );
+
+
+    alert(
+      "No se pudo registrar el conteo."
+    );
+
+
+    btnCoincide.disabled =
+      false;
+
+
+    btnGuardar.disabled =
+      false;
+
+
+    btnCoincide.textContent =
+      "✓ STOCK FÍSICO COINCIDE CON ERP";
+
+
+    btnGuardar.textContent =
+      "GUARDAR CONTEO FÍSICO";
+
+
+  } finally {
+
+
+    guardando =
+      false;
+
+  }
+
+}
+
+
+/* =====================================================
+   RESULTADO
+===================================================== */
+
+function mostrarResultado(
+  cantidad
+) {
+
+  const stock =
+    Number(
+      productoActual.stockERP
+    ) || 0;
+
+
+  const diferencia =
+    Number(cantidad) -
+    stock;
+
+
+  const resultado =
+    elemento(
+      "resultado"
+    );
+
+
+  resultado.innerHTML =
+
+    "✅ CONTEO REGISTRADO" +
+
+    "<br><br>" +
+
+    "Stock ERP: " +
+    stock +
+
+    "<br>" +
+
+    "Conteo físico: " +
+    cantidad +
+
+    "<br>" +
+
+    "Diferencia: " +
+    diferencia;
+
+
+  resultado.style.display =
+    "block";
+
+
+  elemento("conteo")
+    .style.display =
+      "none";
+
+
+  elemento("btnSiguiente")
+    .style.display =
+      "block";
+
+
+  elemento("btnSiguiente")
+    .scrollIntoView({
+
+      behavior: "smooth",
+
+      block: "center"
+
+    });
+
+}
+
+
+/* =====================================================
+   SIGUIENTE
+===================================================== */
+
+function siguienteProducto() {
+
+  productoActual =
+    null;
+
+
+  codigoActual =
+    "";
+
+
+  elemento("busqueda")
+    .value =
+      "";
+
+
+  elemento("producto")
+    .style.display =
+      "none";
+
+
+  elemento("conteo")
+    .style.display =
+      "none";
+
+
+  elemento("resultado")
+    .style.display =
+      "none";
+
+
+  elemento("btnSiguiente")
+    .style.display =
+      "none";
+
+
+  elemento("btnCoincide")
+    .textContent =
+      "✓ STOCK FÍSICO COINCIDE CON ERP";
+
+
+  elemento("btnGuardar")
+    .textContent =
+      "GUARDAR CONTEO FÍSICO";
+
+
+  /* DIRECTO AL SIGUIENTE
+     ESCANEO */
 
   iniciarScanner();
+
 }
+
 
 /* =====================================================
    EVENTOS
 ===================================================== */
-$("btnBuscar").addEventListener("click", buscarManual);
-$("btnScanner").addEventListener("click", iniciarScanner);
-$("btnCoincide").addEventListener("click", confirmarStockERP);
-$("btnGuardarConteo").addEventListener("click", guardarConteoFisico);
-$("btnSiguiente").addEventListener("click", siguienteProducto);
 
-$("busqueda").addEventListener("keydown", function(event) {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    buscarManual();
-  }
-});
+elemento("btnBuscar")
+  .addEventListener(
+    "click",
+    function() {
 
-window.addEventListener("pagehide", detenerScanner);
+      buscarCodigo(
+        elemento(
+          "busqueda"
+        ).value
+      );
 
-document.addEventListener("DOMContentLoaded", cargarCatalogo);
+    }
+  );
+
+
+elemento("btnEscanear")
+  .addEventListener(
+    "click",
+    iniciarScanner
+  );
+
+
+elemento("btnCoincide")
+  .addEventListener(
+    "click",
+    confirmarStock
+  );
+
+
+elemento("btnGuardar")
+  .addEventListener(
+    "click",
+    guardarManual
+  );
+
+
+elemento("btnSiguiente")
+  .addEventListener(
+    "click",
+    siguienteProducto
+  );
+
+
+elemento("busqueda")
+  .addEventListener(
+    "keydown",
+    function(event) {
+
+      if (
+        event.key ===
+        "Enter"
+      ) {
+
+        event
+          .preventDefault();
+
+
+        buscarCodigo(
+          this.value
+        );
+
+      }
+
+    }
+  );
+
+
+/* CERRAR CÁMARA
+   SI SE SALE DE LA APP */
+
+window.addEventListener(
+  "pagehide",
+  detenerScanner
+);
+
+
+/* =====================================================
+   ARRANQUE
+===================================================== */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  cargarCatalogo
+);
+
 </script>
+
 </body>
 </html>
