@@ -1,0 +1,1371 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+
+<meta
+  name="viewport"
+  content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"
+>
+
+<title>TRIMA - Conteo Cíclico V2</title>
+
+<script src="https://unpkg.com/@zxing/browser@latest"></script>
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f6f8;
+  color: #1f2937;
+}
+
+.app {
+  max-width: 520px;
+  margin: auto;
+  padding: 18px;
+}
+
+/* =========================================
+   ENCABEZADO
+========================================= */
+
+.header {
+  background: #173f6d;
+  color: white;
+  border-radius: 16px;
+  padding: 22px 18px;
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: 30px;
+}
+
+.header p {
+  margin: 5px 0 0;
+  font-size: 15px;
+}
+
+/* =========================================
+   TARJETAS
+========================================= */
+
+.card {
+  background: white;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.08);
+}
+
+/* =========================================
+   ESTADO DEL SISTEMA
+========================================= */
+
+#estadoSistema {
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.cargando {
+  color: #8a5b00;
+  background: #fff6dd;
+}
+
+.listo {
+  color: #146c35;
+  background: #e7f6eb;
+}
+
+.error {
+  color: #a61b1b;
+  background: #fdeaea;
+}
+
+/* =========================================
+   BUSCADOR
+========================================= */
+
+.titulo {
+  font-size: 18px;
+  font-weight: bold;
+  margin-bottom: 12px;
+}
+
+input {
+  width: 100%;
+  padding: 16px;
+  border: 2px solid #d5dae1;
+  border-radius: 12px;
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+button {
+  width: 100%;
+  padding: 17px;
+  border: 0;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+button:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+.btnBuscar {
+  background: #173f6d;
+  color: white;
+  margin-bottom: 10px;
+}
+
+.btnScanner {
+  background: #2f6fec;
+  color: white;
+}
+
+/* =========================================
+   CÁMARA
+========================================= */
+
+#visor {
+  display: none;
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: black;
+  margin-top: 15px;
+}
+
+video {
+  width: 100%;
+  display: block;
+  min-height: 360px;
+  object-fit: cover;
+}
+
+.marco {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 38%;
+  height: 24%;
+  border: 4px solid white;
+  border-left-width: 7px;
+  border-right-width: 7px;
+  pointer-events: none;
+}
+
+.linea {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  top: 50%;
+  height: 3px;
+  background: red;
+  pointer-events: none;
+}
+
+#estadoScanner {
+  display: none;
+  margin-top: 12px;
+  padding: 13px;
+  border-radius: 10px;
+  text-align: center;
+  background: #eef4ff;
+  color: #173f6d;
+}
+
+/* =========================================
+   PRODUCTO
+========================================= */
+
+#producto {
+  display: none;
+}
+
+.estadoProducto {
+  padding: 14px;
+  border-radius: 12px;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 18px;
+}
+
+.productoActivo {
+  background: #e6f5e9;
+  color: #137333;
+}
+
+.productoDesactivado {
+  background: #fde7e7;
+  color: #b3261e;
+}
+
+.descripcion {
+  font-size: 25px;
+  font-weight: bold;
+  line-height: 1.25;
+  margin-bottom: 20px;
+}
+
+.dato {
+  padding: 13px 0;
+  border-top: 1px solid #ddd;
+  font-size: 17px;
+}
+
+.dato strong {
+  color: #173f6d;
+}
+
+.stock {
+  margin-top: 18px;
+  padding: 22px;
+  border-radius: 14px;
+  background: #eef3fb;
+  text-align: center;
+}
+
+.stockTitulo {
+  font-size: 17px;
+}
+
+.stockNumero {
+  font-size: 46px;
+  font-weight: bold;
+  color: #173f6d;
+  margin-top: 6px;
+}
+
+.tiempo {
+  margin-top: 15px;
+  text-align: center;
+  color: #667085;
+  font-size: 13px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+  <div class="header">
+    <h1>TRIMA</h1>
+    <p>CONTEO CÍCLICO DE INVENTARIO · V2</p>
+  </div>
+
+  <!-- ESTADO DE CARGA -->
+
+  <div
+    id="estadoSistema"
+    class="card cargando"
+  >
+    ⏳ <strong>Preparando catálogo TRIMA...</strong>
+    <br>
+    Espera un momento antes de comenzar.
+  </div>
+
+  <!-- BUSCADOR -->
+
+  <div class="card">
+
+    <div class="titulo">
+      BUSCAR PRODUCTO
+    </div>
+
+    <input
+      id="busqueda"
+      type="text"
+      inputmode="text"
+      autocomplete="off"
+      placeholder="Código de barras / código proveedor"
+      disabled
+    >
+
+    <button
+      id="btnBuscar"
+      class="btnBuscar"
+      onclick="buscarManual()"
+      disabled
+    >
+      🔎 BUSCAR
+    </button>
+
+    <button
+      id="btnScanner"
+      class="btnScanner"
+      onclick="iniciarScanner()"
+      disabled
+    >
+      📷 ESCANEAR CÓDIGO DE BARRAS
+    </button>
+
+    <div id="visor">
+
+      <video
+        id="video"
+        autoplay
+        muted
+        playsinline
+      ></video>
+
+      <div class="marco"></div>
+      <div class="linea"></div>
+
+    </div>
+
+    <div id="estadoScanner"></div>
+
+  </div>
+
+  <!-- PRODUCTO -->
+
+  <div
+    id="producto"
+    class="card"
+  >
+
+    <div
+      id="estadoProducto"
+      class="estadoProducto"
+    ></div>
+
+    <div
+      id="descripcion"
+      class="descripcion"
+    ></div>
+
+    <div class="dato">
+      <strong>Código proveedor:</strong>
+      <span id="codigoProveedor"></span>
+    </div>
+
+    <div class="dato">
+      <strong>Código de barras:</strong>
+      <span id="codigoBarras"></span>
+    </div>
+
+    <div class="dato">
+      <strong>ID ERP:</strong>
+      <span id="idERP"></span>
+    </div>
+
+    <div class="stock">
+      <div class="stockTitulo">
+        STOCK ERP
+      </div>
+
+      <div
+        id="stockERP"
+        class="stockNumero"
+      ></div>
+    </div>
+
+    <div
+      id="tiempoBusqueda"
+      class="tiempo"
+    ></div>
+
+  </div>
+
+</div>
+
+<script>
+
+/* =====================================================
+   CONFIGURACIÓN
+===================================================== */
+
+const API_URL =
+  "https://script.google.com/macros/s/AKfycbxLuRTDM0DHJ6mHinM0yyylBgSk7a8fCszae4Ryc4KlWhZ7hRr9zwp1IRmr-BeGn1468A/exec";
+
+
+/* =====================================================
+   VARIABLES
+===================================================== */
+
+let catalogo = [];
+
+let indiceCatalogo = new Map();
+
+let catalogoListo = false;
+
+let stream = null;
+
+let controles = null;
+
+let detectado = false;
+
+
+/* =====================================================
+   NORMALIZAR CÓDIGOS
+===================================================== */
+
+function normalizarCodigo(valor) {
+
+  return String(
+    valor === null ||
+    valor === undefined
+      ? ""
+      : valor
+  )
+  .trim()
+  .toUpperCase();
+
+}
+
+
+/* =====================================================
+   CARGAR CATÁLOGO UNA SOLA VEZ
+===================================================== */
+
+function cargarCatalogo() {
+
+  const estado =
+    document.getElementById(
+      "estadoSistema"
+    );
+
+  estado.className =
+    "card cargando";
+
+  estado.innerHTML =
+    "⏳ <strong>Cargando catálogo TRIMA...</strong><br>" +
+    "El escáner se habilitará automáticamente.";
+
+  const callback =
+    "catalogoTRIMA_" +
+    Date.now();
+
+  const script =
+    document.createElement(
+      "script"
+    );
+
+  let terminado = false;
+
+
+  window[callback] =
+    function(respuesta) {
+
+      terminado = true;
+
+      try {
+
+        if (
+          !respuesta ||
+          respuesta.ok !== true ||
+          !Array.isArray(
+            respuesta.catalogo
+          )
+        ) {
+
+          throw new Error(
+            "No se recibió un catálogo válido."
+          );
+
+        }
+
+        catalogo =
+          respuesta.catalogo;
+
+        construirIndice();
+
+        catalogoListo = true;
+
+        habilitarApp();
+
+        estado.className =
+          "card listo";
+
+        estado.innerHTML =
+          "✅ <strong>SISTEMA LISTO</strong><br>" +
+          catalogo.length +
+          " artículos cargados.";
+
+      }
+
+      catch(error) {
+
+        mostrarErrorCatalogo(
+          error.message
+        );
+
+      }
+
+      finally {
+
+        try {
+          delete window[callback];
+        } catch(e) {}
+
+        script.remove();
+
+      }
+
+    };
+
+
+  script.onerror =
+    function() {
+
+      if (terminado) return;
+
+      terminado = true;
+
+      mostrarErrorCatalogo(
+        "No fue posible conectar con TRIMA."
+      );
+
+      try {
+        delete window[callback];
+      } catch(e) {}
+
+      script.remove();
+
+    };
+
+
+  script.src =
+    API_URL +
+    "?accion=catalogo" +
+    "&callback=" +
+    encodeURIComponent(callback) +
+    "&_=" +
+    Date.now();
+
+
+  document.body.appendChild(
+    script
+  );
+
+
+  setTimeout(
+    function() {
+
+      if (
+        !terminado &&
+        !catalogoListo
+      ) {
+
+        estado.innerHTML =
+          "⏳ <strong>Google sigue preparando el catálogo...</strong><br>" +
+          "No es necesario tocar ningún botón.";
+
+      }
+
+    },
+    8000
+  );
+
+
+  setTimeout(
+    function() {
+
+      if (
+        !terminado &&
+        !catalogoListo
+      ) {
+
+        mostrarErrorCatalogo(
+          "La carga del catálogo tardó demasiado. Recarga la página."
+        );
+
+      }
+
+    },
+    45000
+  );
+
+}
+
+
+/* =====================================================
+   CREAR ÍNDICE EN MEMORIA
+===================================================== */
+
+function construirIndice() {
+
+  indiceCatalogo.clear();
+
+  for (
+    let i = 0;
+    i < catalogo.length;
+    i++
+  ) {
+
+    const producto =
+      catalogo[i];
+
+    const codigoProveedor =
+      normalizarCodigo(
+        producto.codigoProveedor
+      );
+
+    const codigoBarras =
+      normalizarCodigo(
+        producto.codigoBarras
+      );
+
+
+    if (
+      codigoProveedor &&
+      !indiceCatalogo.has(
+        codigoProveedor
+      )
+    ) {
+
+      indiceCatalogo.set(
+        codigoProveedor,
+        producto
+      );
+
+    }
+
+
+    if (
+      codigoBarras &&
+      !indiceCatalogo.has(
+        codigoBarras
+      )
+    ) {
+
+      indiceCatalogo.set(
+        codigoBarras,
+        producto
+      );
+
+    }
+
+  }
+
+}
+
+
+/* =====================================================
+   HABILITAR APP
+===================================================== */
+
+function habilitarApp() {
+
+  document
+    .getElementById(
+      "busqueda"
+    )
+    .disabled = false;
+
+  document
+    .getElementById(
+      "btnBuscar"
+    )
+    .disabled = false;
+
+  document
+    .getElementById(
+      "btnScanner"
+    )
+    .disabled = false;
+
+}
+
+
+/* =====================================================
+   ERROR CATÁLOGO
+===================================================== */
+
+function mostrarErrorCatalogo(
+  mensaje
+) {
+
+  const estado =
+    document.getElementById(
+      "estadoSistema"
+    );
+
+  estado.className =
+    "card error";
+
+  estado.innerHTML =
+    "❌ <strong>NO SE PUDO CARGAR EL CATÁLOGO</strong><br>" +
+    escaparHTML(mensaje) +
+    "<br><br>" +
+    "Recarga esta página para intentarlo nuevamente.";
+
+}
+
+
+/* =====================================================
+   BUSCAR LOCAL
+===================================================== */
+
+function buscarProductoLocal(
+  codigo
+) {
+
+  if (!catalogoListo) {
+    return null;
+  }
+
+  const clave =
+    normalizarCodigo(
+      codigo
+    );
+
+  if (!clave) {
+    return null;
+  }
+
+  return (
+    indiceCatalogo.get(
+      clave
+    ) || null
+  );
+
+}
+
+
+/* =====================================================
+   BÚSQUEDA MANUAL
+===================================================== */
+
+function buscarManual() {
+
+  const codigo =
+    document
+      .getElementById(
+        "busqueda"
+      )
+      .value;
+
+  procesarCodigo(
+    codigo
+  );
+
+}
+
+
+/* =====================================================
+   PROCESAR CÓDIGO
+===================================================== */
+
+function procesarCodigo(
+  codigo
+) {
+
+  const inicio =
+    performance.now();
+
+  const clave =
+    normalizarCodigo(
+      codigo
+    );
+
+  if (!clave) {
+    return;
+  }
+
+  document
+    .getElementById(
+      "busqueda"
+    )
+    .value = clave;
+
+
+  const producto =
+    buscarProductoLocal(
+      clave
+    );
+
+
+  if (!producto) {
+
+    document
+      .getElementById(
+        "producto"
+      )
+      .style.display =
+        "none";
+
+    alert(
+      "Producto no encontrado en el catálogo TRIMA.\n\nCódigo: " +
+      clave
+    );
+
+    return;
+
+  }
+
+
+  mostrarProducto(
+    producto
+  );
+
+
+  const fin =
+    performance.now();
+
+  const milisegundos =
+    Math.round(
+      fin - inicio
+    );
+
+
+  document
+    .getElementById(
+      "tiempoBusqueda"
+    )
+    .textContent =
+      "Búsqueda local: " +
+      milisegundos +
+      " ms";
+
+}
+
+
+/* =====================================================
+   MOSTRAR PRODUCTO
+===================================================== */
+
+function mostrarProducto(
+  producto
+) {
+
+  const contenedor =
+    document.getElementById(
+      "producto"
+    );
+
+  const estado =
+    document.getElementById(
+      "estadoProducto"
+    );
+
+
+  const desactivado =
+    producto.desactivado === true ||
+    normalizarCodigo(
+      producto.estadoArticulo
+    ) === "DESACTIVADO" ||
+    normalizarCodigo(
+      producto.estadoArticulo
+    ) === "NO";
+
+
+  if (desactivado) {
+
+    estado.className =
+      "estadoProducto productoDesactivado";
+
+    estado.textContent =
+      "🔴 ARTÍCULO DESACTIVADO";
+
+  }
+
+  else {
+
+    estado.className =
+      "estadoProducto productoActivo";
+
+    estado.textContent =
+      "🟢 ARTÍCULO ACTIVO";
+
+  }
+
+
+  document
+    .getElementById(
+      "descripcion"
+    )
+    .textContent =
+      producto.descripcion || "";
+
+
+  document
+    .getElementById(
+      "codigoProveedor"
+    )
+    .textContent =
+      producto.codigoProveedor || "";
+
+
+  document
+    .getElementById(
+      "codigoBarras"
+    )
+    .textContent =
+      producto.codigoBarras || "";
+
+
+  document
+    .getElementById(
+      "idERP"
+    )
+    .textContent =
+      producto.id || "";
+
+
+  document
+    .getElementById(
+      "stockERP"
+    )
+    .textContent =
+      producto.stockERP === undefined
+        ? ""
+        : producto.stockERP;
+
+
+  contenedor.style.display =
+    "block";
+
+
+  setTimeout(
+    function() {
+
+      contenedor.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+
+    },
+    50
+  );
+
+}
+
+
+/* =====================================================
+   DETENER CÁMARA
+===================================================== */
+
+function detenerScanner() {
+
+  try {
+
+    if (controles) {
+
+      controles.stop();
+
+      controles = null;
+
+    }
+
+  }
+
+  catch(e) {}
+
+
+  if (stream) {
+
+    stream
+      .getTracks()
+      .forEach(
+        track =>
+          track.stop()
+      );
+
+    stream = null;
+
+  }
+
+}
+
+
+/* =====================================================
+   INICIAR ESCÁNER
+   SE CONSERVA LA CONFIGURACIÓN QUE FUNCIONÓ EN IPHONE
+===================================================== */
+
+async function iniciarScanner() {
+
+  if (!catalogoListo) {
+
+    alert(
+      "Espera a que aparezca SISTEMA LISTO."
+    );
+
+    return;
+
+  }
+
+
+  detenerScanner();
+
+  detectado = false;
+
+
+  const video =
+    document.getElementById(
+      "video"
+    );
+
+  const visor =
+    document.getElementById(
+      "visor"
+    );
+
+  const estado =
+    document.getElementById(
+      "estadoScanner"
+    );
+
+
+  document
+    .getElementById(
+      "producto"
+    )
+    .style.display =
+      "none";
+
+
+  visor.style.display =
+    "block";
+
+  estado.style.display =
+    "block";
+
+  estado.innerHTML =
+    "📷 Abriendo cámara trasera...";
+
+
+  try {
+
+    stream =
+      await navigator
+        .mediaDevices
+        .getUserMedia({
+
+          audio: false,
+
+          video: {
+
+            facingMode: {
+              ideal: "environment"
+            },
+
+            width: {
+              ideal: 1920
+            },
+
+            height: {
+              ideal: 1080
+            },
+
+            frameRate: {
+              ideal: 30
+            }
+
+          }
+
+        });
+
+
+    video.srcObject =
+      stream;
+
+    await video.play();
+
+
+    const track =
+      stream
+        .getVideoTracks()[0];
+
+
+    let capabilities = {};
+
+
+    if (
+      typeof track.getCapabilities ===
+      "function"
+    ) {
+
+      capabilities =
+        track.getCapabilities();
+
+    }
+
+
+    const advanced = [];
+
+
+    if (
+      capabilities.focusMode &&
+      Array.isArray(
+        capabilities.focusMode
+      ) &&
+      capabilities.focusMode.includes(
+        "continuous"
+      )
+    ) {
+
+      advanced.push({
+        focusMode: "continuous"
+      });
+
+    }
+
+
+    if (
+      capabilities.zoom &&
+      typeof capabilities.zoom.min ===
+        "number" &&
+      typeof capabilities.zoom.max ===
+        "number"
+    ) {
+
+      let zoomDeseado =
+        Math.max(
+          capabilities.zoom.min,
+          1.2
+        );
+
+      zoomDeseado =
+        Math.min(
+          zoomDeseado,
+          capabilities.zoom.max
+        );
+
+      advanced.push({
+        zoom: zoomDeseado
+      });
+
+    }
+
+
+    if (
+      advanced.length > 0
+    ) {
+
+      try {
+
+        await track.applyConstraints({
+          advanced: advanced
+        });
+
+      }
+
+      catch(e) {
+
+        console.log(
+          "Constraints avanzados:",
+          e
+        );
+
+      }
+
+    }
+
+
+    estado.innerHTML =
+      "🔎 <strong>LECTOR ACTIVO</strong><br>" +
+      "Mantén el código dentro del marco.";
+
+
+    const lector =
+      new ZXingBrowser
+        .BrowserMultiFormatReader();
+
+
+    controles =
+      await lector.decodeFromStream(
+
+        stream,
+
+        video,
+
+        function(
+          resultadoZXing,
+          error,
+          controlActual
+        ) {
+
+          if (
+            !resultadoZXing ||
+            detectado
+          ) {
+
+            return;
+
+          }
+
+
+          const texto =
+            resultadoZXing.getText();
+
+
+          if (!texto) {
+            return;
+          }
+
+
+          detectado = true;
+
+
+          try {
+
+            controlActual.stop();
+
+          }
+
+          catch(e) {}
+
+
+          if (stream) {
+
+            stream
+              .getTracks()
+              .forEach(
+                t => t.stop()
+              );
+
+            stream = null;
+
+          }
+
+
+          visor.style.display =
+            "none";
+
+
+          estado.innerHTML =
+            "🎯 Código leído: <strong>" +
+            escaparHTML(texto) +
+            "</strong>";
+
+
+          procesarCodigo(
+            texto
+          );
+
+        }
+
+      );
+
+  }
+
+  catch(error) {
+
+    console.error(error);
+
+
+    estado.style.display =
+      "block";
+
+
+    estado.innerHTML =
+      "❌ No fue posible iniciar la cámara.<br>" +
+      escaparHTML(
+        error.message
+      );
+
+  }
+
+}
+
+
+/* =====================================================
+   SEGURIDAD DE TEXTO
+===================================================== */
+
+function escaparHTML(
+  texto
+) {
+
+  return String(
+    texto === undefined ||
+    texto === null
+      ? ""
+      : texto
+  )
+  .replace(
+    /&/g,
+    "&amp;"
+  )
+  .replace(
+    /</g,
+    "&lt;"
+  )
+  .replace(
+    />/g,
+    "&gt;"
+  )
+  .replace(
+    /"/g,
+    "&quot;"
+  )
+  .replace(
+    /'/g,
+    "&#039;"
+  );
+
+}
+
+
+/* =====================================================
+   ENTER EN BÚSQUEDA
+===================================================== */
+
+document
+  .getElementById(
+    "busqueda"
+  )
+  .addEventListener(
+    "keydown",
+    function(event) {
+
+      if (
+        event.key === "Enter"
+      ) {
+
+        event.preventDefault();
+
+        buscarManual();
+
+      }
+
+    }
+  );
+
+
+/* =====================================================
+   CERRAR CÁMARA AL SALIR
+===================================================== */
+
+window.addEventListener(
+  "pagehide",
+  detenerScanner
+);
+
+
+/* =====================================================
+   ARRANQUE
+===================================================== */
+
+document.addEventListener(
+  "DOMContentLoaded",
+  function() {
+
+    cargarCatalogo();
+
+  }
+);
+
+</script>
+
+</body>
+</html>
