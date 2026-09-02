@@ -770,79 +770,705 @@ function construirIndice() {
 
 function buscarCodigo(codigo) {
 
-  if (!catalogoListo) {
+  if (!catalogoListo) return;
 
-    return;
+  const inicio = performance.now();
+  const clave = normalizar(codigo);
 
-  }
+  if (!clave) return;
 
+  /* =========================================
+     1. PRIMERO: CÓDIGO EXACTO
+     EAN o código proveedor
+  ========================================= */
 
-  const inicio =
-    performance.now();
+  const productoExacto = indice.get(clave);
 
+  if (productoExacto) {
 
-  const clave =
-    normalizar(codigo);
+    codigoActual = clave;
+    productoActual = productoExacto;
 
+    elemento("busqueda").value = clave;
 
-  if (!clave) {
+    ocultarResultadosBusqueda();
+    mostrarProducto(productoExacto);
 
-    return;
-
-  }
-
-
-  const producto =
-    indice.get(clave);
-
-
-  if (!producto) {
-
-    limpiarProducto();
-
-    alert(
-      "Producto no encontrado.\n\n" +
-      "Código: " +
-      clave
+    const tiempo = Math.round(
+      performance.now() - inicio
     );
 
+    elemento("tiempoBusqueda").textContent =
+      "Búsqueda local: " + tiempo + " ms";
+
+    return;
+  }
+
+
+  /* =========================================
+     2. SI NO ES CÓDIGO:
+     BÚSQUEDA INTELIGENTE POR DESCRIPCIÓN
+  ========================================= */
+
+  buscarPorDescripcion(clave);
+
+}
+
+/* =====================================================
+   BÚSQUEDA INTELIGENTE POR DESCRIPCIÓN
+===================================================== */
+
+function buscarPorDescripcion(textoBusqueda) {
+
+  const inicio = performance.now();
+
+  const consulta = normalizarBusqueda(textoBusqueda);
+
+  if (!consulta) return;
+
+  const palabrasConsulta = consulta
+    .split(" ")
+    .filter(Boolean);
+
+  const resultados = [];
+
+
+  for (let i = 0; i < catalogo.length; i++) {
+
+    const producto = catalogo[i];
+
+    const descripcionOriginal =
+      producto.descripcion || "";
+
+    const descripcion =
+      normalizarBusqueda(descripcionOriginal);
+
+    if (!descripcion) continue;
+
+    const palabrasDescripcion =
+      descripcion.split(" ").filter(Boolean);
+
+    let puntos = 0;
+    let palabrasEncontradas = 0;
+
+
+    /* -----------------------------------------
+       COINCIDENCIA DE CADA PALABRA
+    ----------------------------------------- */
+
+    for (const palabra of palabrasConsulta) {
+
+      let encontrada = false;
+
+
+      /* Coincidencia exacta de palabra */
+
+      if (palabrasDescripcion.includes(palabra)) {
+
+        puntos += 25;
+        encontrada = true;
+
+      }
+
+
+      /* Coincidencia parcial */
+
+      else if (
+        palabra.length >= 3 &&
+        palabrasDescripcion.some(
+          p =>
+            p.includes(palabra) ||
+            palabra.includes(p)
+        )
+      ) {
+
+        puntos += 15;
+        encontrada = true;
+
+      }
+
+
+      if (encontrada) {
+
+        palabrasEncontradas++;
+
+      }
+
+    }
+
+
+    /* -----------------------------------------
+       BONO:
+       TODAS LAS PALABRAS FUERON ENCONTRADAS
+    ----------------------------------------- */
+
+    if (
+      palabrasEncontradas ===
+      palabrasConsulta.length
+    ) {
+
+      puntos += 30;
+
+    }
+
+
+    /* -----------------------------------------
+       BONO:
+       FRASE COMPLETA
+    ----------------------------------------- */
+
+    if (descripcion.includes(consulta)) {
+
+      puntos += 25;
+
+    }
+
+
+    /* -----------------------------------------
+       BONO ESPECIAL PARA MEDIDAS
+       19MM, 13MM, 5/8, 3/4, etc.
+    ----------------------------------------- */
+
+    for (const palabra of palabrasConsulta) {
+
+      if (
+        /\d/.test(palabra) &&
+        palabrasDescripcion.includes(palabra)
+      ) {
+
+        puntos += 20;
+
+      }
+
+    }
+
+
+    /* -----------------------------------------
+       NO MOSTRAR RESULTADOS IRRELEVANTES
+    ----------------------------------------- */
+
+    if (palabrasEncontradas === 0) {
+
+      continue;
+
+    }
+
+
+    const porcentajePalabras =
+      palabrasEncontradas /
+      palabrasConsulta.length;
+
+
+    /*
+      Si escribió varias palabras,
+      exigimos una coincidencia razonable.
+    */
+
+    if (
+      palabrasConsulta.length >= 2 &&
+      porcentajePalabras < 0.5
+    ) {
+
+      continue;
+
+    }
+
+
+    /* -----------------------------------------
+       PORCENTAJE VISUAL
+    ----------------------------------------- */
+
+    let porcentaje =
+      Math.round(
+        porcentajePalabras * 70
+      );
+
+
+    if (
+      palabrasEncontradas ===
+      palabrasConsulta.length
+    ) {
+
+      porcentaje += 20;
+
+    }
+
+
+    if (descripcion.includes(consulta)) {
+
+      porcentaje += 10;
+
+    }
+
+
+    porcentaje =
+      Math.min(
+        porcentaje,
+        100
+      );
+
+
+    resultados.push({
+
+      producto: producto,
+
+      puntos: puntos,
+
+      porcentaje: porcentaje
+
+    });
+
+  }
+
+
+  /* =========================================
+     ORDENAR:
+     MAYOR RELEVANCIA PRIMERO
+  ========================================= */
+
+  resultados.sort(
+    (a, b) => {
+
+      if (b.puntos !== a.puntos) {
+
+        return b.puntos - a.puntos;
+
+      }
+
+      return (
+        b.porcentaje -
+        a.porcentaje
+      );
+
+    }
+  );
+
+
+  /* =========================================
+     MOSTRAR MÁXIMO 20
+  ========================================= */
+
+  mostrarResultadosBusqueda(
+    resultados.slice(0, 20),
+    textoBusqueda,
+    Math.round(
+      performance.now() - inicio
+    )
+  );
+
+}
+
+
+/* =====================================================
+   NORMALIZACIÓN PARA BÚSQUEDA
+===================================================== */
+
+function normalizarBusqueda(texto) {
+
+  return String(texto || "")
+
+    .toUpperCase()
+
+    .normalize("NFD")
+
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    )
+
+    /* 19 MM -> 19MM */
+
+    .replace(
+      /(\d+)\s+MM\b/g,
+      "$1MM"
+    )
+
+    /* 13 CM -> 13CM */
+
+    .replace(
+      /(\d+)\s+CM\b/g,
+      "$1CM"
+    )
+
+    /* CU = COBRE */
+
+    .replace(
+      /\bCOBRE\b/g,
+      "CU"
+    )
+
+    /* espacios */
+
+    .replace(
+      /\s+/g,
+      " "
+    )
+
+    .trim();
+
+}
+
+
+/* =====================================================
+   MOSTRAR RESULTADOS
+===================================================== */
+
+function mostrarResultadosBusqueda(
+  resultados,
+  consulta,
+  tiempo
+) {
+
+  let zona =
+    elemento("resultadosBusqueda");
+
+
+  /*
+    La zona se crea una sola vez.
+    No necesitamos modificar el HTML.
+  */
+
+  if (!zona) {
+
+    zona =
+      document.createElement("div");
+
+    zona.id =
+      "resultadosBusqueda";
+
+    zona.className =
+      "card";
+
+
+    const producto =
+      elemento("producto");
+
+
+    producto.parentNode.insertBefore(
+      zona,
+      producto
+    );
+
+  }
+
+
+  zona.innerHTML = "";
+
+
+  if (resultados.length === 0) {
+
+    zona.innerHTML = `
+      <div style="
+        text-align:center;
+        padding:20px;
+      ">
+        <strong>
+          No encontré productos relacionados.
+        </strong>
+
+        <br><br>
+
+        <span style="color:#666">
+          Búsqueda: ${escaparTexto(consulta)}
+        </span>
+      </div>
+    `;
+
+    zona.style.display =
+      "block";
+
     return;
 
   }
 
 
-  codigoActual =
-    clave;
+  const encabezado =
+    document.createElement("div");
 
+
+  encabezado.innerHTML = `
+    <div style="
+      font-size:18px;
+      font-weight:bold;
+      margin-bottom:5px;
+    ">
+      RESULTADOS
+    </div>
+
+    <div style="
+      color:#666;
+      font-size:14px;
+      margin-bottom:15px;
+    ">
+      ${resultados.length}
+      coincidencias principales ·
+      ${tiempo} ms
+    </div>
+  `;
+
+
+  zona.appendChild(
+    encabezado
+  );
+
+
+  resultados.forEach(
+    function(resultado) {
+
+      const producto =
+        resultado.producto;
+
+
+      const estado =
+        normalizar(
+          producto.estadoArticulo
+        );
+
+
+      const desactivado =
+
+        producto.desactivado === true ||
+
+        estado ===
+          "DESACTIVADO" ||
+
+        estado ===
+          "NO";
+
+
+      const tarjeta =
+        document.createElement("button");
+
+
+      tarjeta.type =
+        "button";
+
+
+      tarjeta.style.cssText = `
+        display:block;
+        width:100%;
+        text-align:left;
+        background:white;
+        color:#202936;
+        border:1px solid #d8dee8;
+        border-radius:12px;
+        padding:15px;
+        margin-bottom:10px;
+        font-size:15px;
+        font-weight:normal;
+      `;
+
+
+      tarjeta.innerHTML = `
+
+        <div style="
+          display:flex;
+          justify-content:space-between;
+          gap:10px;
+          margin-bottom:9px;
+        ">
+
+          <strong style="
+            color:#1e4b7a;
+          ">
+            ${resultado.porcentaje}%
+            coincidencia
+          </strong>
+
+          <strong style="
+            color:${
+              desactivado
+                ? "#b42318"
+                : "#08752e"
+            };
+          ">
+            ${
+              desactivado
+                ? "🔴 DESACTIVADO"
+                : "🟢 ACTIVO"
+            }
+          </strong>
+
+        </div>
+
+
+        <div style="
+          font-size:17px;
+          font-weight:bold;
+          line-height:1.3;
+          margin-bottom:10px;
+        ">
+          ${escaparTexto(
+            producto.descripcion || ""
+          )}
+        </div>
+
+
+        <div style="
+          color:#555;
+          line-height:1.5;
+        ">
+
+          Código proveedor:
+          <strong>
+            ${escaparTexto(
+              producto.codigoProveedor || "-"
+            )}
+          </strong>
+
+          <br>
+
+          Stock ERP:
+          <strong>
+            ${
+              producto.stockERP === undefined
+                ? "-"
+                : escaparTexto(
+                    producto.stockERP
+                  )
+            }
+          </strong>
+
+        </div>
+      `;
+
+
+      tarjeta.addEventListener(
+        "click",
+        function() {
+
+          seleccionarResultado(
+            producto
+          );
+
+        }
+      );
+
+
+      zona.appendChild(
+        tarjeta
+      );
+
+    }
+  );
+
+
+  zona.style.display =
+    "block";
+
+
+  zona.scrollIntoView({
+
+    behavior: "smooth",
+
+    block: "start"
+
+  });
+
+}
+
+
+/* =====================================================
+   SELECCIONAR RESULTADO
+===================================================== */
+
+function seleccionarResultado(producto) {
 
   productoActual =
     producto;
 
 
-  elemento("busqueda")
-    .value = clave;
+  /*
+    Para guardar utilizamos primero
+    código proveedor y después EAN.
+  */
+
+  codigoActual =
+    normalizar(
+      producto.codigoProveedor ||
+      producto.codigoBarras
+    );
+
+
+  elemento("busqueda").value =
+    producto.codigoProveedor ||
+    producto.codigoBarras ||
+    producto.descripcion ||
+    "";
+
+
+  ocultarResultadosBusqueda();
 
 
   mostrarProducto(
     producto
   );
 
+}
 
-  const tiempo =
-    Math.round(
-      performance.now() -
-      inicio
+
+/* =====================================================
+   OCULTAR RESULTADOS
+===================================================== */
+
+function ocultarResultadosBusqueda() {
+
+  const zona =
+    elemento(
+      "resultadosBusqueda"
     );
 
 
-  elemento("tiempoBusqueda")
-    .textContent =
-      "Búsqueda local: " +
-      tiempo +
-      " ms";
+  if (zona) {
+
+    zona.style.display =
+      "none";
+
+  }
 
 }
 
+
+/* =====================================================
+   SEGURIDAD PARA TEXTO EN RESULTADOS
+===================================================== */
+
+function escaparTexto(valor) {
+
+  return String(
+    valor === undefined ||
+    valor === null
+      ? ""
+      : valor
+  )
+
+  .replace(
+    /&/g,
+    "&amp;"
+  )
+
+  .replace(
+    /</g,
+    "&lt;"
+  )
+
+  .replace(
+    />/g,
+    "&gt;"
+  )
+
+  .replace(
+    /"/g,
+    "&quot;"
+  )
+
+  .replace(
+    /'/g,
+    "&#039;"
+  );
+
+}
+  
 
 /* =====================================================
    MOSTRAR PRODUCTO
